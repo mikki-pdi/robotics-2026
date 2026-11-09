@@ -4,39 +4,27 @@
 #include "YEEP144_DebugUART.h"
 #include "YEEP144_BluetoothUART.h"
 #include "string.h"
+#include "YEEP144_I2C.h"
+#include "YEEP144_GP2Y0E02B.h"
 
 //Variables
-uint8_t RxData[32] = {0};
-
- //Callbacks
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
-    HAL_UART_Receive_DMA(&huart2, RxData, 32);
-}
-
-void YEEP144_BluetoothUART_MatchCallback(){
-    YEEP144_DebugUART_printf("Callback successfully triggered!\r\n");
-    YEEP144_DebugUART_printf("RxData: %s", RxData);
-    memset(RxData, '\0', 32);
-    HAL_UART_Receive_DMA(&huart2, RxData, 32);
-}
 
 int main(void){
     //Function Initializations
     YEEP144_Init();
     YEEP144_DebugUART_Init();
-    YEEP144_BluetoothUART_Init();
+    YEEP144_I2C_Init();
 
-    //Testing printf
-    YEEP144_DebugUART_printf("Program started!\r\n");
+    //Init code
+    YEEP144_DebugUART_printf("Program Start Success!");
+    YEEP144_I2C_MuxSelect(0);
+    //Loop
+    while(1) {
+        //Reading IR sensors
+        float distance_IR0 = YEEP144_GP2Y0E02B_Read();
+        YEEP144_DebugUART_printf("IR0(int): %d\r\n", (int)distance_IR0);
+        YEEP144_DebugUART_printf("IR0(float): %f\r\n", distance_IR0);
 
-    //Start DMA reception
-    HAL_UART_Receive_DMA(&huart2, RxData, 32);
-
-    //Enable character match IRQ
-    YEEP144_BluetoothUART_SetCharMatch('X');
-    YEEP144_BluetoothUART_EnableCharMatchIRQ();
-
-    while(1) {      
         HAL_Delay(1000);
     }
 }
